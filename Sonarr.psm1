@@ -36,7 +36,7 @@ class SonarrPVR
     }
 
     # Format API Uri Methods
-    [string] FormatUri([string]$Endpoint)
+    hidden [string] FormatUri([string]$Endpoint)
     {
         $base = $this.SonarrUrl
         $key = $this.ApiKey
@@ -44,7 +44,7 @@ class SonarrPVR
         Write-Debug $uri
         return $uri
     }
-    [string] FormatUri([string]$Endpoint, [int]$ItemId)
+    hidden [string] FormatUri([string]$Endpoint, [int]$ItemId)
     {
         $base = $this.SonarrUrl
         $key = $this.ApiKey
@@ -52,7 +52,7 @@ class SonarrPVR
         Write-Debug $uri
         return $uri
     }
-    [string] FormatUri([string]$Endpoint, [string]$Condition, [int]$ConditionId)
+    hidden [string] FormatUri([string]$Endpoint, [string]$Condition, [int]$ConditionId)
     {
         $base = $this.SonarrUrl
         $key = $this.ApiKey
@@ -62,22 +62,34 @@ class SonarrPVR
     }
 
     # Convert to Json Blocks
-    [string] ToJson([string]$Command)
+    hidden [string] ToJson([string]$Command)
     {
         $json = @{ Name = $Command } | ConvertTo-Json
         return $json
     }
-    [string] ToJson([hashtable]$hash)
+    hidden [string] ToJson([hashtable]$hash)
     {
         $json = $hash | ConvertTo-Json
         return $json
+    }
+
+    # Issue the API Call
+    hidden [object] Call([string]$Uri)
+    {
+        $result = Invoke-RestMethod -Uri $Uri -Method Get
+        return $result
+    }
+    hidden [object] Call([string]$Uri, [string]$Method, [string]$Json)
+    {
+        $result = Invoke-RestMethod -Uri $Uri -Method $Method -Body $Json
+        return $result
     }
 
     # Series
     [psobject] GetSeries()
     {
         $query = $this.FormatUri("series")
-        $results = Invoke-RestMethod -Uri $query -Method Get
+        $results = $this.Call($query)
         $retObj = $results | %{
             New-Object PSObject -Property @{
                 Show = $_.title
@@ -111,7 +123,7 @@ class SonarrPVR
     [psobject] GetSeries([string]$Show)
     {
         $query = $this.FormatUri("series")
-        $results = Invoke-RestMethod -Uri $query -Method Get
+        $results = $this.Call($query)
         $retObj = $results | ? title -eq $Show | %{
             New-Object PSObject -Property @{
                 Show = $_.title
@@ -145,7 +157,7 @@ class SonarrPVR
     [psobject] GetSeries([int]$ShowId)
     {
         $query = $this.FormatUri("series", $ShowId)
-        $results = Invoke-RestMethod -Uri $query -Method Get
+        $results = $this.Call($query)
         $retObj = $results | %{
             New-Object PSObject -Property @{
                 Show = $_.title
@@ -185,14 +197,13 @@ class SonarrPVR
             throw "$Show is not a valid show..."
         }
         $findEP = $this.FormatUri("episode", "seriesId", $ShowId)
-        $results = Invoke-RestMethod -Uri $findEP -Method Get
+        $results = $this.Call($findEP)
         return $results
     }
     [object] GetEpisode([int]$EpisodeId)
     {
-        $base = $this.SonarrUrl
         $query = $this.FormatUri("episode", $EpisodeId)
-        $epRes = Invoke-RestMethod -Uri $query -Method Get
+        $epRes = $this.Call($query)
         return $epRes
     }
     [object] GetEpisode([string]$Show, [int]$EpisodeNo)
@@ -202,14 +213,14 @@ class SonarrPVR
             throw "$Show is not a valid show..."
         }
         $findEp = $this.FormatUri("episode", "seriesId", $ShowId)
-        $epRes = Invoke-RestMethod -Uri $findEP -Method Get
+        $epRes = $this.Call($findEP)
         $realEP = $epRes | ? episodeNumber -eq $EpisodeNo
         return $realEP
     }
     [object] GetEpisode([int]$ShowId, [int]$EpisodeNo)
     {
         $findEPs = $this.FormatUri("episode", "seriesId", $ShowId)
-        $allEps = Invoke-RestMethod -Uri $findEPs -Method Get
+        $allEps = $this.Call($findEPs)
         if (!$allEps) {
             throw "$ShowId is not a valid ShowID..."
         }
@@ -234,27 +245,27 @@ class SonarrPVR
     [object] GetJob()
     {
         $get = $this.FormatUri("command")
-        $results = Invoke-RestMethod -Uri $get -Method Get
+        $results = $this.Call($get)
         return $results
     }
     [object] GetJob([int]$CommandId)
     {
         $get = $this.FormatUri("command", $CommandId)
-        $results = Invoke-RestMethod -Uri $get -Method Get
+        $results = $this.Call($get)
         return $results
     }
     [string] StartRssSync()
     {
         $json = $this.ToJson("RssSync")
         $post = $this.FormatUri("command")
-        $res = Invoke-RestMethod -Uri $post -Method Post -Body $json
+        $res = $this.Call($post, "Post", $json)
         return $res
     }
     [object] RefreshSeries()
     {
         $post = $this.FormatUri("command")
         $json = $this.ToJson("RefreshSeries")
-        $res = Invoke-RestMethod -Uri $post -Method Post -Body $json
+        $res = $this.Call($post, "Post", $json)
         return $res
     }
     [object] RefreshSeries([string]$Show)
@@ -265,7 +276,7 @@ class SonarrPVR
             Name = "RefreshSeries"
             seriesId = $getShow
         })
-        $res = Invoke-RestMethod -Uri $post -Method Post -Body $json
+        $res = $this.Call($post, "Post", $json)
         return $res
     }
     [object] RefreshSeries([int]$ShowId)
@@ -275,7 +286,7 @@ class SonarrPVR
             Name = "RefreshSeries"
             seriesId = $ShowId
         })
-        $res = Invoke-RestMethod -Uri $post -Method Post -Body $json
+        $res = $this.Call($post, "Post", $json)
         return $res
     }
     [object] SearchSeason([string]$Show, [int]$SeasonNo)
@@ -287,7 +298,7 @@ class SonarrPVR
             seriesId = $showId
             seasonNumber = $SeasonNo
         })
-        $res = Invoke-RestMethod -Uri $post -Method Post -Body $json
+        $res = $this.Call($post, "Post", $json)
         return $res
     }
     [object] SearchSeason([int]$ShowId, [int]$SeasonNo)
@@ -298,7 +309,7 @@ class SonarrPVR
             seriesId = $showId
             seasonNumber = $SeasonNo
         })
-        $res = Invoke-RestMethod -Uri $post -Method Post -Body $json
+        $res = $this.Call($post, "Post", $json)
         return $res
     }
 
@@ -307,7 +318,7 @@ class SonarrPVR
     {
         $post = $this.FormatUri("command")
         $json = $this.ToJson("Backup")
-        $res = Invoke-RestMethod -Uri $post -Method Post -Body $json
+        $res = $this.Call($post, "Post", $json)
         return $res
     }
 
@@ -315,7 +326,7 @@ class SonarrPVR
     [psobject] CheckSystemStatus()
     {
         $get = $this.FormatUri("system/status")
-        $res = Invoke-RestMethod -Uri $get -Method Get
+        $res = $this.Call($get)
         $retObj = $res | %{
             New-Object PSObject -Property @{
                 Version = $_.Version
@@ -343,7 +354,7 @@ class SonarrPVR
     [psobject] CheckDisks()
     {
         $get = $this.FormatUri("diskspace")
-        $res = Invoke-RestMethod -Uri $get -Method Get
+        $res = $this.Call($get)
         $retObj = $res | %{
             New-Object PSObject -Property @{
                 Path = $_.path
