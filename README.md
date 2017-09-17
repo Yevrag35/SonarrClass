@@ -8,17 +8,17 @@ Minimum PS Version of 5.0 -- https://www.microsoft.com/en-us/download/details.as
 There are a couple of ways to import the class in your script or session:
 
 1. Read Content and Execute
-  * Quickest and dirtiest way to import the module
-      $content = Get-Content "<path to moulde>"
-      Invoke-Expression $content
+  * Quickest and dirtiest way to import the module  
+  ``$content = Get-Content "<path to module>"``    
+  ``Invoke-Expression $content``
 
-2. Putting "using <path to module>" at the beginning of your script.
+2. Putting ``using <path to module>`` at the beginning of your script.
   * Only downside to this method is that module path must be ABSOLUTE and does not accept variables.
  
 3. Using this command sequence:
 
-      Import-Module <path to module>
-      $sonarr = & (Get-Module Sonarr).NewBoundScriptBlock({[SonarrPVR]::new("<your sonarr URL>")})
+      ``Import-Module <path to module>``  
+      ``$sonarr = & (Get-Module Sonarr).NewBoundScriptBlock({[SonarrPVR]::new("<your sonarr URL>")})``
    This creates an object called "$sonarr" in your session or script, and is not limited to absolute paths.
    
 # Notes
