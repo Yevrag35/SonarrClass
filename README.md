@@ -18,7 +18,7 @@ There are a couple of ways to import the class in your script or session:
 3. Using this command sequence:
 
       ``Import-Module <path to module>``  
-      ``$sonarr = & (Get-Module Sonarr).NewBoundScriptBlock({[SonarrPVR]::new("<your sonarr URL>")})``
+      ``$sonarr = & (Get-Module Sonarr).NewBoundScriptBlock({[SonarrPVR]::new("<your sonarr URL>")})``  
    This creates an object called "$sonarr" in your session or script, and is not limited to absolute paths.
    
 # Notes
