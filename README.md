@@ -1,3 +1,8 @@
+# State of the Code
+__I no longer am doing anything to this repo.__  
+For a more robust version (and something I'm actively working on), check out
+__[PoshSonarr](https://github.com/Yevrag35/PoshSonarr)__.
+
 # Summary
 An PowerShell class for utilizing the API's for SONARR.
 
